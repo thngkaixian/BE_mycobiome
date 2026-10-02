@@ -1,0 +1,190 @@
+library(phyloseq)
+library(microViz)
+library(microbiome)
+library(RColorBrewer)
+library(vegan)
+library(ggplot2)
+
+
+# --------------------------------------------------------------------------------------------------------------
+## Parameters and directories 
+# --------------------------------------------------------------------------------------------------------------
+
+project_name <- "MYCOBIOME_AsiaBRIDGE"
+taxLevel <- "Genus"
+
+## Directories 
+wkdir <- file.path("/Users/thngkaixian/PhD_RESEARCH/RESEARCH_Projects", project_name, "SequencingData")
+indir_ps <- file.path(wkdir, "FINAL_ANALYSIS")
+# indir_colour_palette <- file.path(wkdir, "Colour_Palette") ## Colour palette
+
+outdir <- file.path(wkdir, "FINAL_ANALYSIS", "Analysis", "Figure_1")
+if (!dir.exists(outdir)) try(dir.create(outdir, recursive= TRUE), silent= TRUE)
+
+
+# --------------------------------------------------------------------------------------------------------------
+## Read ps object
+# --------------------------------------------------------------------------------------------------------------
+
+ps.prop <- readRDS(file.path(indir_ps, paste0("Final_psITS_", taxLevel, "_RelativeAbundance.RData")))
+
+  # Top taxa
+  # ------------------------------------------------------------------------------------------
+  top25 <- names(sort(taxa_sums(ps.prop), decreasing=TRUE))[1:min(25,ntaxa(ps.prop))] ; top25
+  ps.prop.topN <- prune_taxa(top25, ps.prop)
+  ps.prop.topN <- tax_reorder(ps.prop.topN, top25)
+  ps.final <- ps.prop.topN 
+  
+  
+# --------------------------------------------------------------------------------------------------------------
+# Color palette
+# --------------------------------------------------------------------------------------------------------------
+  
+  ## Genus
+  colTaxa <- c("Candida" = "#468A4B" , # "468A4B" green4
+    "Saccharomyces" = "#BFDBE5" , 
+    "Penicillium" = "#CFDE7F" , 
+    "Microidium" = "#7F4F99" ,
+    "Aspergillus" = "#E16D53" , 
+    "Malassezia" = "#3D898E" , 
+    "Cladosporium" = "#9DCAEC" ,
+    "Mycosphaerella" = "#EFBFCC" ,
+    "Schizophyllum" = "#F3EB52" ,
+    "Filobasidium" = "#2F6036" ,
+    "Fusarium" = "#BB3630" ,
+    "Heterobasidion" = "#F6E2C6" ,
+    "Clavispora" = "#EEE592" ,
+    "Cutaneotrichosporon"  = "#A8312D" ,
+    "Wallemia" = "#665EA4", 
+    "Trametes" = "#E5823A", 
+    "Cryptococcus" = "#84C9DB", 
+    "Lentinus" = "#5873B4" ,
+    "Chaenotheca" = "#DE9883", 
+    "Nakaseomyces" = "#2B2D76" , 
+    "Rhodotorula" = "#7ABA57" )
+  colTaxa<- data.frame(colTaxa)
+  colnames(colTaxa) <- c("Hex_code")
+
+
+# ==============================================================================================================
+# SUBSET into subgroups
+# ==============================================================================================================
+
+  ## Asia | Europe
+  # ------------------------------------------------------------------------------------------
+  ps.final_Asia <- subset_samples(ps.final, Continent == "Asia")
+  ps.final_Europe <- subset_samples(ps.final, Continent == "Europe")
+
+
+# --------------------------------------------------------------------------------------------------------------
+## ASSIGN ANALYSIS OF INTEREST
+# --------------------------------------------------------------------------------------------------------------
+
+  PS_plot <- ps.final ; COHORT<-"AllPatients" ; COHORT
+  # PS_plot <- ps.final_Asia ; COHORT<-"South-East Asia" ; COHORT
+  PS_plot <- ps.final_Europe ; COHORT<-"Europe" ; COHORT
+
+  
+# --------------------------------------------------------------------------------------------------------------
+# Aggregated barplots - By Sample Source
+# --------------------------------------------------------------------------------------------------------------
+
+GROUP_VAR <- "Continent"
+GROUP_VAR <- "Region"
+GROUP_VAR <- "Country"
+
+  
+  #### Aggregate by clinical groups
+  # --------------------------------------------------------------------------------------------------------------
+  ps.merged <- transform_sample_counts(merge_samples(PS_plot, GROUP_VAR), function(otu) {if (sum(otu)==0) otu else 100*otu/sum(otu)})
+  sample_data(ps.merged)[,GROUP_VAR] <- sample_names(ps.merged)
+  
+  
+    ## Factor data and specify labels
+    # --------------------------------------------------------------------------------------------------------------
+    
+    ## --- Continent
+    sample_data(ps.merged)[,GROUP_VAR] <- factor(sample_data(ps.merged)$Continent,
+                                                 levels = c("Asia", "Europe"),
+                                                 labels = c("South-East Asia\n(N=106)", "Europe\n(N=165)"))
+  
+    ## --- Region
+    sample_data(ps.merged)[,GROUP_VAR] <- factor(sample_data(ps.merged)$Region,
+                                                 levels = c("Asia", "NWE", "SE", "UK"),
+                                                 labels = c("Asia\n(N=106)", "Northern and\nWestern Europe\n(N=26)","Southern\nEurope\n(N=75)", "United\nKingdom\n(N=64)"))
+    sample_data(ps.merged)[,"Continent"] <- sapply(sample_names(ps.merged), function(x){
+      if(x=="Asia") "Asia" 
+      else if (x=="NWE" | x=="SE" | x=="UK") "Europe"
+    })
+
+    ## --- Country
+    sample_data(ps.merged)[,GROUP_VAR] <- factor(sample_data(ps.merged)$Country,
+                                                 levels = c("Singapore", "KualaLumpur", "Belgium", "Germany", "Netherlands", "Greece", "Spain","England", "Scotland"),
+                                                 labels = c("Singapore\n(N=75)", "Malaysia\n(N=31)", "Belgium\n(N=12)", "Germany\n(N=9)", "Netherlands\n(N=5)", "Greece\n(N=15)", "Spain\n(N=60)","England\n(N=13)", "Scotland\n(N=51)"))
+
+    sample_data(ps.merged)[,"Region"] <- sapply(sample_names(ps.merged), function(x){
+      if(x=="Singapore" | x=="KualaLumpur") "Asia"
+      else if (x=="Belgium" | x=="Germany" | x=="Netherlands") "Northern and Western Europe"
+      else if (x=="Greece" | x=="Spain") "Southern Europe"
+      else if (x=="England" | x=="Scotland") "United Kingdom"
+    })
+
+    sample_data(ps.merged)[,"Continent"] <- sapply(sample_names(ps.merged), function(x){
+      if(x=="Singapore" | x=="KualaLumpur") "Asia"
+      else if (x=="Belgium" | x=="Germany" | x=="Netherlands") "Europe"
+      else if (x=="Greece" | x=="Spain") "Europe"
+      else if (x=="England" | x=="Scotland") "Europe"
+    })
+    
+  
+    
+  ## Plot
+  # --------------------------------------------------------------------------------------------------------------
+  p_Agg <- plot_bar(ps.merged, x=GROUP_VAR, fill="Genus") +
+    geom_bar(stat="identity", aes(color=Genus)) +
+    xlab(NULL) +
+    ylab('Relative abundance (%)') +
+    guides(fill= guide_legend(ncol= 1)) +
+    labs(fill = "Genus") +  
+    facet_grid(.~Region, scales = "free", space = "free") +
+    theme(legend.text = element_text(face = "italic", size = 7),
+          legend.key.height = unit(1, "mm"),
+          axis.text.x = element_text(color="black", angle = 0, hjust = 0.5),
+          axis.text.y = element_text(color="black"),
+          axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank()) +
+    scale_fill_manual(values=as.character(colTaxa[taxa_names(ps.merged),])) +
+    scale_colour_manual(values=as.character(colTaxa[taxa_names(ps.merged),]))
+  p_Agg$data$Genus <- factor(p_Agg$data$Genus, levels= taxa_names(ps.merged))
+  p_Agg
+  
+  # Output barplot into .png file
+  output_barplot <- file.path(outdir, paste0("Barplot_", taxLevel, '-Aggregate', "-", COHORT, "-", GROUP_VAR, '.png'))
+  
+  # ggsave(output_barplot, plot = p_Agg, height = 8, width = 12, units = "cm") # Continent |  # 3 European Region
+  ggsave(output_barplot, plot = p_Agg, height = 8, width = 22, units = "cm") # Country
+
+  
+    #### NO LEGENDS ####
+    # --------------------------------------------------------------------------------------------------------------
+    p_Agg_NoLegends <- p_Agg + theme(legend.position = "none")
+    p_Agg_NoLegends
+    
+    # Output barplot into .png file
+    output_barplot <- file.path(outdir, paste0("Barplot_", taxLevel, '-Aggregate', "-", COHORT, "-", GROUP_VAR, "-NoLegends", '.png'))
+    
+    ggsave(output_barplot, plot = p_Agg_NoLegends, height = 8, width = 10, units = "cm") # Continent
+    # ggsave(output_barplot, plot = p_Agg_NoLegends, height = 8, width = 22, units = "cm") # Country
+    
+
+  
+  
+  
+  
+  
+  
+
+  
+  
