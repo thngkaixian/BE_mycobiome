@@ -51,7 +51,7 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, "Final_ps_Genus_HHP_35patients.
   df_metadataOTU <- merge(metadata, OTU_long, by.x = "row.names", by.y = "SequencingID", all.x = TRUE, all.y = TRUE)
   row.names(df_metadataOTU) <- df_metadataOTU$Row.names ; df_metadataOTU$Row.names <- NULL
   
-    ## Subset Air and Surfaces only (Remove Sputum and Inhalers)
+    ## Subset Air and Surfaces
     # --------------------------------------------------------------------------------------------------------------
     df_metadataOTU_Air_Surfaces <- subset(df_metadataOTU, SampleType != "Sputum") #Remove Sputum
     df_metadataOTU_Air_Surfaces$Genus <- droplevels(df_metadataOTU_Air_Surfaces$Genus)
@@ -90,11 +90,11 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, "Final_ps_Genus_HHP_35patients.
                           aes(x = Sequencing_ID, y = Genus)) + #, size = Relative_Abundance, color = Genus
     geom_point(alpha = 0.7, shape=21, aes(fill=Genus, size=Relative_Abundance)) +
     scale_size_continuous(name="Metagenome reads", # Rename legend title here
-                          limits = c(0, 20000), ##----------Ivan's comments about the circles.... 
+                          limits = c(0, 20000), 
                           range = c(1, 30)) +
       scale_fill_manual(values = Colour_palette) +
     labs(y = NULL, x = NULL) + 
-    facet_grid(.~SampleType, scales = "free", labeller = labeller(SampleType=Sample_Type_labels) ) + #space = "free", | "Home.Sampling.Type" --- Specific Sample Type for surfaces  
+    facet_grid(.~SampleType, scales = "free", labeller = labeller(SampleType=Sample_Type_labels) ) + 
     guides(color = "none",
            fill = "none") + 
     theme_classic() +
