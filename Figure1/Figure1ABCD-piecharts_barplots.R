@@ -26,7 +26,26 @@ if (!dir.exists(outdir)) try(dir.create(outdir, recursive= TRUE), silent= TRUE)
 ## Read ps object
 # --------------------------------------------------------------------------------------------------------------
 
-ps.prop <- readRDS(file.path(indir_ps, paste0("Final_psITS_", taxLevel, "_RelativeAbundance.RData")))
+ps <- readRDS(file.path(indir_ps, paste0("Final_psITS_", taxLevel, ".RData")))
+ps <- prune_taxa(taxa_names(ps)[!grepl('unidentified',taxa_names(ps))], ps)
+
+  ## Filter 
+  RelAbundThreshold <- 0.01
+  sampleThreshold <- 0.05
+
+  ps.prop <- transform_sample_counts(ps, function(otu) {if (sum(otu)==0) otu else otu/sum(otu)})
+  tax <- taxa_names(ps.prop)[apply(otu_table(ps.prop), 2, function(x) {sum(x >= RelAbundThreshold) >= sampleThreshold*nsamples(ps)})]
+  ps <- prune_taxa(tax, ps)
+
+
+  ## Add diversity information to sample data information
+  for (method in c('shannon', 'simpson', 'invsimpson')) {
+    sample_data(ps)[, paste0(method, 'Diversity')] <- diversity(otu_table(ps), index= method)
+  }
+
+  ## Relative abundance
+  ps.prop <- transform_sample_counts(ps, function(otu) {if (sum(otu)==0) otu else 100*otu/sum(otu)})
+  
 
   # Top taxa
   # ------------------------------------------------------------------------------------------
