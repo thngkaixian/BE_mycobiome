@@ -38,7 +38,6 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, "Final_ps_Genus_HHP_35patients.
   #### Using Raw counts
   ps_Eukaryota <- subset_taxa(ps_microbiome_HHP, Superkingdom=="Eukaryota")
   metadata <- data.frame(sample_data(ps_Eukaryota))
-  metadata <- metadata[, -c(53:304)] #Delete allergen data here
   OTU <- data.frame(otu_table(ps_Eukaryota))
 
   
