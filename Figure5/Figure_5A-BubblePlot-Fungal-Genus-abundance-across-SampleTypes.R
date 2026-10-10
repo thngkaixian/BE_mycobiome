@@ -51,7 +51,7 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, "Final_ps_Genus_HHP_35patients.
   df_metadataOTU <- merge(metadata, OTU_long, by.x = "row.names", by.y = "SequencingID", all.x = TRUE, all.y = TRUE)
   row.names(df_metadataOTU) <- df_metadataOTU$Row.names ; df_metadataOTU$Row.names <- NULL
   
-    ## Subset Air and Surfaces
+    ## Subset Air and Surfaces only (Remove Sputum and Inhalers)
     # --------------------------------------------------------------------------------------------------------------
     df_metadataOTU_Air_Surfaces <- subset(df_metadataOTU, SampleType != "Sputum") #Remove Sputum
     df_metadataOTU_Air_Surfaces$Genus <- droplevels(df_metadataOTU_Air_Surfaces$Genus)
@@ -81,26 +81,19 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, "Final_ps_Genus_HHP_35patients.
     
   ## bubble chart --- Using Raw Read Counts
   # --------------------------------------------------------------------------------------------------------------
-  min(df_metadataOTU_Air_Surfaces$Relative_Abundance, na.rm = TRUE) #bottom end of scale
-  max(df_metadataOTU_Air_Surfaces$Relative_Abundance, na.rm = TRUE) #upper end of scale
-  length(sort(unique(df_metadataOTU_Air_Surfaces$Genus))) #30 Genus
-  
-  
   p_bubblechart_Reads <- ggplot(df_metadataOTU_Air_Surfaces, 
-                          aes(x = Sequencing_ID, y = Genus)) + #, size = Relative_Abundance, color = Genus
+                          aes(x = Sequencing_ID, y = Genus)) + 
     geom_point(alpha = 0.7, shape=21, aes(fill=Genus, size=Relative_Abundance)) +
-    scale_size_continuous(name="Metagenome reads", # Rename legend title here
-                          limits = c(0, 20000), 
+    scale_size_continuous(name="Metagenome reads", 
+                          limits = c(0, 20000),
                           range = c(1, 30)) +
       scale_fill_manual(values = Colour_palette) +
     labs(y = NULL, x = NULL) + 
-    facet_grid(.~SampleType, scales = "free", labeller = labeller(SampleType=Sample_Type_labels) ) + 
+    facet_grid(.~SampleType, scales = "free", labeller = labeller(SampleType=Sample_Type_labels) ) +
     guides(color = "none",
            fill = "none") + 
     theme_classic() +
-    theme(#legend.key = element_rect(fill = "white"), #-----Makes the legend background white
-          axis.text.y = element_text(face = "italic"),
-          # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    theme(axis.text.y = element_text(face = "italic"),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
           panel.background = element_blank(),

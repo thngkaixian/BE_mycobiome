@@ -68,14 +68,6 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, paste0("Final_ps_", taxLevel_Mi
   names(Sample_Type_labels) <- c("Indoor", "Outdoor", "SwabS")
     
   ######## COLOURS #########
-  # Colour_palette <- c("indianred1","dodgerblue1","thistle","lightskyblue", "darkolivegreen1","cyan3","bisque", "royalblue", "khaki2", "pink",
-  #                     "yellow", "limegreen", "coral2", "violetred", "indianred2", "darkblue",
-  #                     "darkorange1", "cyan1", "royalblue4", "maroon2", "darkblue", "aquamarine",
-  #                     "deepskyblue2", "slateblue", "dodgerblue3", "darkolivegreen1", "darkgoldenrod1",
-  #                     "violetred", "grey","slategrey","black", "pink3",
-  #                     "bisque", "lightblue", "darkblue", "cadetblue", "indianred1", "turquoise2",
-  #                     "cyan1", "cyan3", "thistle", "salmon2", "blue2" )
-  
   Colour_palette_Aspergillus <- c("Aspergillus.aculeatinus" = "#E41A1C", 
                                   "Aspergillus.awamori" = "#377EB8",
                                   "Aspergillus.clavatus" = "#4DAF4A",
@@ -91,26 +83,19 @@ ps_microbiome_HHP <- readRDS(file.path(indir_ps, paste0("Final_ps_", taxLevel_Mi
     
   ## bubble chart --- Using Raw Read Counts
   # --------------------------------------------------------------------------------------------------------------
-  min(df_metadataOTU_Air_Surfaces$Relative_Abundance, na.rm = TRUE) #bottom end of scale
-  max(df_metadataOTU_Air_Surfaces$Relative_Abundance, na.rm = TRUE) #upper end of scale
-  length(sort(unique(df_metadataOTU_Air_Surfaces$Aspergillus_Species))) #11 Aspergillus Species 
-  
-  
   p_bubblechart_Reads <- ggplot(df_metadataOTU_Air_Surfaces, 
-                                aes(x = Sequencing_ID, y = Aspergillus_Species)) + #, size = Relative_Abundance, color = Genus
+                                aes(x = Sequencing_ID, y = Aspergillus_Species)) +
     geom_point(alpha = 0.7, shape=21, aes(fill=Aspergillus_Species, size=Relative_Abundance)) +
-    scale_size_continuous(name="Metagenome reads", # Rename legend title here
+    scale_size_continuous(name="Metagenome reads",
                           limits = c(0, 2000),
                           range = c(1, 30)) +
     scale_fill_manual(values = Colour_palette_Aspergillus) +
     labs(y = NULL, x = NULL) + 
-    facet_grid(.~SampleType, scales = "free", labeller = labeller(SampleType=Sample_Type_labels) ) + #space = "free", | "Home.Sampling.Type" --- Specific Sample Type for surfaces  
+    facet_grid(.~SampleType, scales = "free", labeller = labeller(SampleType=Sample_Type_labels) ) + 
     guides(color = "none",
            fill = "none") + 
     theme_classic() +
-    theme(#legend.key = element_rect(fill = "white"), #-----Makes the legend background white
-      axis.text.y = element_text(face = "italic"),
-      # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    theme(axis.text.y = element_text(face = "italic"),
       axis.text.x = element_blank(),
       axis.ticks.x = element_blank(),
       panel.background = element_blank(),
